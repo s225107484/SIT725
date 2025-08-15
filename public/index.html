@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Week 4 Notes</title>
+  <style>
+    body{font-family:system-ui,Arial;margin:2rem;max-width:680px}
+    form{display:flex;gap:.5rem;margin-bottom:1rem}
+    input,button{padding:.6rem;font-size:1rem}
+    ul{list-style:none;padding:0;display:grid;gap:.5rem}
+    li{border:1px solid #ddd;padding:.6rem;border-radius:.5rem}
+    small{color:#666}
+  </style>
+</head>
+<body>
+  <h1>Week 4 Notes (SQLite)</h1>
+  <form id="f">
+    <input id="t" placeholder="Write a note..." required />
+    <button>Add</button>
+  </form>
+  <ul id="list"></ul>
+
+  <script>
+  const list = document.getElementById("list");
+  const form = document.getElementById("f");
+  const box = document.getElementById("t");
+
+  async function load(){
+    const r = await fetch("/api/notes");
+    const data = await r.json();
+    list.innerHTML = data.map(n => `
+      <li>
+        <b>${esc(n.text)}</b><br>
+        <small>#${n.id} • ${n.created_at}</small><br>
+        <button onclick="del(${n.id})">Delete</button>
+      </li>
+    `).join("");
+  }
+
+  form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const text = box.value.trim(); if(!text) return;
+    await fetch("/api/notes",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text})
+    });
+    box.value = "";
+    load();
+  });
+
+  async function del(id){
+    await fetch("/api/notes/"+id,{method:"DELETE"});
+    load();
+  }
+
+  function esc(s){
+    return s.replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+  load();
+</script>
